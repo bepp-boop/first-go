@@ -1,3 +1,15 @@
-- name: Example step
-  run: |
-    echo 'Hello ${{ inputs.name }}'
+name: Test Env Var Fix Action
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Apply env var fix
+        uses: ./env-fix-action
+        run: |
+            echo 'Hello ${{ inputs.name }}'
