@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// Import from a different folder yaml and print it in template_injection
-	yamlfile := filepath.Join("vuln", "template_injection.yaml")
+	yamlfile := filepath.Join("vuln", "ADES100.yaml")
 
 	data, err := os.ReadFile(yamlfile)
 	if err != nil {
@@ -20,6 +20,5 @@ func main() {
 		return
 	}
 
-	_ = string(data)
-
+	fmt.Println("YAML file content:\n", string(data))
 }

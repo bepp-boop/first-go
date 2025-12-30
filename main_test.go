@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestGenerateProcessedEnvVarName(t *testing.T) {
 		expected string
 	}{
 		{"github.event.issue.title", "process.env.GITHUB_EVENT_ISSUE_TITLE"},
-		{"inputs.name", "process.env.NAME"},
+		{"inputs.name", "process.env.INPUTS_NAME"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
@@ -55,29 +56,22 @@ func TestGenerateProcessedEnvVarName(t *testing.T) {
 }
 
 func TestADES100Fix(t *testing.T) {
-	originalYAML := `
-name: test
-
-on: workflow_dispatch
-
-jobs:
-  test-job:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Example step
-        run: echo "Hello ${{ inputs.name }}"
-`
+	yamlfile := filepath.Join("vuln", "ADES100.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
 
 	// Create the fix (this does NOT apply it yet)
 	fix := autofix.ADES100Fix(
 		"${{ inputs.name }}",
-		"test-job",
+		"test",
 		0,
 		`echo "Hello ${{ inputs.name }}"`,
 	)
 
 	// Apply the fix
-	modified, changed, err := fix.Apply(originalYAML)
+	modified, changed, err := fix.Apply(string(originalYAML))
 	if err != nil {
 		t.Fatalf("unexpected error applying fix: %v", err)
 	}
@@ -99,24 +93,16 @@ jobs:
 	if !strings.Contains(modified, "$INPUTS_NAME") {
 		t.Errorf("expected run script to reference $INPUTS_NAME")
 	}
-	fmt.Println(modified)
+	t.Log(modified)
 }
 
 func TestADES101Fix(t *testing.T) {
-	originalYAML := `
-name: ADES101
+	yamlfile := filepath.Join("vuln", "ADES101.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
 
-on: workflow_dispatch
-
-jobs:
-  example_job:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Example step
-        uses: actions/github-script@v6
-        with:
-          script: console.log('Hello ${{ inputs.name }}')
-`
 	// Create the fix (this does NOT apply it yet)
 	fix := autofix.ADES101Fix(
 		"${{ inputs.name }}",
@@ -125,7 +111,7 @@ jobs:
 		`console.log('Hello ${{ inputs.name }}')`,
 	)
 	// Apply the fix
-	modified, changed, err := fix.Apply(originalYAML)
+	modified, changed, err := fix.Apply(string(originalYAML))
 	if err != nil {
 		t.Fatalf("unexpected error applying fix: %v", err)
 	}
@@ -144,5 +130,190 @@ jobs:
 	if !strings.Contains(modified, "process.env.INPUTS_NAME") {
 		t.Errorf("expected script to reference process.env.INPUTS_NAME")
 	}
-	fmt.Println(modified)
+	t.Log(modified)
+}
+
+func TestADES102Fix(t *testing.T) {
+	yamlfile := filepath.Join("vuln", "ADES102.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES102Fix(
+		"${{ github.event.issue.title }}",
+		"example_job",
+		0,
+		"Closing ${{ github.event.issue.title }}",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+		t.Log(modified)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	// Assert: environment variable is added
+	if !strings.Contains(modified, "env:") {
+		t.Errorf("expected env block to be added")
+	}
+	if !strings.Contains(modified, "GITHUB_EVENT_ISSUE_TITLE") {
+		t.Errorf("expected generated environment variable name GITHUB_EVENT_ISSUE_TITLE")
+	}
+	// Assert: script uses process.env
+	if !strings.Contains(modified, "process.env.GITHUB_EVENT_ISSUE_TITLE") {
+		t.Errorf("expected script to reference process.env.GITHUB_EVENT_ISSUE_TITLE")
+	}
+	t.Log(modified)
+}
+
+func TestADES103Fix(t *testing.T) {
+	yamlfile := filepath.Join("vuln", "ADES103.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES103Fix(
+		"${{ github.event.issue.title }}",
+		"example_job",
+		0,
+		"Closing ${{ github.event.issue.title }}",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	// Assert: environment variable is added
+	if !strings.Contains(modified, "env:") {
+		t.Errorf("expected env block to be added")
+	}
+	if !strings.Contains(modified, "GITHUB_EVENT_ISSUE_TITLE") {
+		t.Errorf("expected generated environment variable name GITHUB_EVENT_ISSUE_TITLE")
+	}
+	// Assert: script uses shell variable
+	if !strings.Contains(modified, "${process.env.GITHUB_EVENT_ISSUE_TITLE}") {
+		t.Errorf("expected script to reference $GITHUB_EVENT_ISSUE_TITLE")
+	}
+	t.Log(modified)
+}
+
+func TestADES104Fix(t *testing.T) {
+	yamlfile := filepath.Join("vuln", "ADES104.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES104Fix(
+		"${{ github.event.inputs.file }}",
+		"example_job",
+		0,
+		"jq .version ${{ github.event.inputs.file }} -r",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	// Assert: environment variable is added
+	if !strings.Contains(modified, "env:") {
+		t.Errorf("expected env block to be added")
+	}
+	if !strings.Contains(modified, "GITHUB_EVENT_INPUTS_FILE") {
+		t.Errorf("expected generated environment variable name GITHUB_EVENT_INPUTS_FILE")
+	}
+	// Assert: script uses shell variable
+	if !strings.Contains(modified, "$GITHUB_EVENT_INPUTS_FILE") {
+		t.Errorf("expected script to reference $GITHUB_EVENT_INPUTS_FILE")
+	}
+	t.Log(modified)
+}
+
+func TestADES105Fix(t *testing.T) {
+	yamlfile := filepath.Join("vuln", "ADES105.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES105Fix(
+		"${{ inputs.cmd }}",
+		"example_job",
+		0,
+		`echo "Running command: ${{ inputs.cmd }}"`,
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "${{ inputs.cmd }}") {
+		t.Errorf("No clarify expression should remain in the modified YAML")
+	}
+	t.Log(modified)
+}
+
+func TestADES106Fix(t *testing.T) {
+	yamlfile := filepath.Join("vuln", "ADES106.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES106Fix(
+		"${{ inputs.value }}",
+		"example_job",
+		0,
+		"1 + parseInt(${{ inputs.value }})",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if !strings.Contains(modified, "env.INPUTS_VALUE") {
+		t.Errorf("expected to have this expression format")
+	}
+	t.Log(modified)
+}
+
+func TestADES107Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES106.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	// Create the fix
+	fix := autofix.ADES107Fix(
+		"${{ inputs.color }}",
+		"example_job",
+		0,
+		"{ attachments: [{ color: '${{ inputs.color }}' }] }",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	t.Log(modified)
 }

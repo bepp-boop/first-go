@@ -65,6 +65,14 @@ func GenerateProcessedEnvVarName(expr string) string {
 	return "process.env." + GenerateEnvVarName(expr)
 }
 
+func GenerateDotEnvVarName(expr string) string {
+	return "env." + GenerateEnvVarName(expr)
+}
+
+func GenerateOsEnvVarName(expr string) string {
+	return "os.getenv." + GenerateEnvVarName(expr)
+}
+
 func AddShellSpecifier(jobID string, stepIndex int) Fix {
 	return Fix{
 		Title:       "Add explicit shell specification",
@@ -291,7 +299,8 @@ func ADES101Fix(
 				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
 			}
 
-			envVarName := GenerateProcessedEnvVarName(cleanExpr)
+			envVarName := GenerateEnvVarName(cleanExpr)
+			Process_EnvVarName := GenerateProcessedEnvVarName(cleanExpr)
 
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
@@ -300,7 +309,7 @@ func ADES101Fix(
 			newScript := strings.ReplaceAll(
 				scriptCopy,
 				fullExpr,
-				fmt.Sprintf("$%s", envVarName),
+				fmt.Sprintf("${%s}", Process_EnvVarName),
 			)
 
 			scriptPath := fmt.Sprintf(
@@ -364,8 +373,8 @@ func ADES102Fix(
 				cleanExpr = expressionCopy
 				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
 			}
-
-			envVarName := GenerateProcessedEnvVarName(cleanExpr)
+			envVarName := GenerateEnvVarName(cleanExpr)
+			Process_EnvVarName := GenerateProcessedEnvVarName(cleanExpr)
 
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
@@ -374,7 +383,7 @@ func ADES102Fix(
 			newScript := strings.ReplaceAll(
 				scriptCopy,
 				fullExpr,
-				fmt.Sprintf("$%s", envVarName),
+				fmt.Sprintf("${%s}", Process_EnvVarName),
 			)
 
 			withPath := fmt.Sprintf(
@@ -439,7 +448,8 @@ func ADES103Fix(
 				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
 			}
 
-			envVarName := GenerateProcessedEnvVarName(cleanExpr)
+			envVarName := GenerateEnvVarName(cleanExpr)
+			Process_EnvVarName := GenerateProcessedEnvVarName(cleanExpr)
 
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
@@ -448,7 +458,7 @@ func ADES103Fix(
 			newScript := strings.ReplaceAll(
 				scriptCopy,
 				fullExpr,
-				fmt.Sprintf("$%s", envVarName),
+				fmt.Sprintf("${%s}", Process_EnvVarName),
 			)
 
 			withPath := fmt.Sprintf(
@@ -606,6 +616,262 @@ func ADES105Fix(
 				return "", false, err
 			}
 
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES106Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from expression to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			dotEnvVarName := GenerateDotEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				fullExpr,
+				fmt.Sprintf("%s", dotEnvVarName),
+			)
+
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/expression",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES107Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from custom_payload to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			Process_EnvVarName := GenerateProcessedEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				fullExpr,
+				fmt.Sprintf("${%s}", Process_EnvVarName),
+			)
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/custom_payload",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES108Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				fullExpr,
+				fmt.Sprintf("$%s", envVarName),
+			)
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/script",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES109Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			osEnvVarName := GenerateOsEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				fullExpr,
+				fmt.Sprintf("$%s", osEnvVarName),
+			)
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/script",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
 			return string(modified), true, nil
 		},
 	}
