@@ -6,10 +6,8 @@ import (
 	// File handling imports
 	"os"
 	"path/filepath"
-
 	// Import the autofix package
 	// <-- matches module + folder
-	"example.com/first-go/autofix"
 )
 
 func main() {
