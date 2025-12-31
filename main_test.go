@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -293,8 +294,9 @@ func TestADES106Fix(t *testing.T) {
 	t.Log(modified)
 }
 
+// Need to fix remove ”
 func TestADES107Fix(t *testing.T) {
-	yamlpatch := filepath.Join("vuln", "ADES106.yaml")
+	yamlpatch := filepath.Join("vuln", "ADES107.yaml")
 	originalYAML, err := os.ReadFile(yamlpatch)
 	if err != nil {
 		t.Fatalf("error reading YAML file: %v", err)
@@ -315,5 +317,179 @@ func TestADES107Fix(t *testing.T) {
 	if !changed {
 		t.Fatalf("expected fix to report changes, but changed=false")
 	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+		fmt.Println(modified)
+	}
 	t.Log(modified)
+}
+
+// Change from ” to "" for interpolation
+func TestADES108Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES108.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES108Fix(
+		"${{ inputs.name }}",
+		"example_job",
+		0,
+		"echo 'Hello ${{ inputs.name }}'",
+	)
+
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+}
+
+// Need to fix for python interpolation because of double quotation
+func TestADES109Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES109.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES109Fix(
+		"${{ inputs.name }}",
+		"example_job",
+		0,
+		"print(\"Hello ${{ inputs.name }}\")",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+
+}
+
+func TestADES110Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES110.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES110Fix(
+		"${{ inputs.name }}",
+		"example_job",
+		0,
+		"Write-Output 'Hello ${{ inputs.name }}'",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+
+}
+
+func TestADES111Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES111.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES111Fix(
+		"${{ inputs.query }}",
+		"example_job",
+		0,
+		"yq '${{ inputs.query }}' 'config.yml'",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+
+}
+
+func TestADES112Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES112.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES112Fix(
+		"${{ inputs.query }}",
+		"example_job",
+		0,
+		"yq eval '${{ inputs.query }}' 'config.yml'",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+
+}
+
+func TestADES113Fix(t *testing.T) {
+	yamlpatch := filepath.Join("vuln", "ADES113.yaml")
+	originalYAML, err := os.ReadFile(yamlpatch)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	fix := autofix.ADES113Fix(
+		"${{ inputs.name }}",
+		"example_job",
+		0,
+		"Write-Output 'Hello ${{ inputs.name }}'",
+	)
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+	if strings.Contains(modified, "''${process.env.INPUTS_COLOR}''") {
+		t.Fatalf("Still have the single quote around it, format issues")
+	}
+	t.Log(modified)
+
 }

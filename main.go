@@ -6,13 +6,15 @@ import (
 	// File handling imports
 	"os"
 	"path/filepath"
+
 	// Import the autofix package
 	// <-- matches module + folder
+	yamlpatch "github.com/palantir/pkg/yamlpatch"
 )
 
 func main() {
 	// Import from a different folder yaml and print it in template_injection
-	yamlfile := filepath.Join("vuln", "ADES100.yaml")
+	yamlfile := filepath.Join("vuln", "ADES107.yaml")
 
 	data, err := os.ReadFile(yamlfile)
 	if err != nil {
@@ -20,5 +22,17 @@ func main() {
 		return
 	}
 
-	fmt.Println("YAML file content:\n", string(data))
+	test := yamlpatch.Operation{
+		Type:  yamlpatch.OperationReplace,
+		Path:  yamlpatch.MustParsePath("/jobs/example_job/steps/0/with/custom_payload"),
+		Value: "Hello",
+	}
+
+	modify, err := yamlpatch.Apply(data, yamlpatch.Patch([]yamlpatch.Operation{test}))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(string(modify))
+
 }

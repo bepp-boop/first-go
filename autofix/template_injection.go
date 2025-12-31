@@ -713,13 +713,24 @@ func ADES107Fix(
 			}
 			envVarName := GenerateEnvVarName(cleanExpr)
 			Process_EnvVarName := GenerateProcessedEnvVarName(cleanExpr)
+
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
 			}
+
+			// Replace quoted expression first: '${{ ... }}'
+			quotedExpr := fmt.Sprintf("'%s'", fullExpr)
 			newScript := strings.ReplaceAll(
 				scriptCopy,
+				quotedExpr,
+				Process_EnvVarName,
+			)
+
+			// Replace unquoted expression: ${{ ... }}
+			newScript = strings.ReplaceAll(
+				newScript,
 				fullExpr,
-				fmt.Sprintf("${%s}", Process_EnvVarName),
+				Process_EnvVarName,
 			)
 			withPath := fmt.Sprintf(
 				"/jobs/%s/steps/%d/with/custom_payload",
@@ -779,10 +790,88 @@ func ADES108Fix(
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
 			}
+
+			// Step 1: replace single quotes with double quotes
+			newScript := strings.ReplaceAll(scriptCopy, "'", "\"")
+
+			// Step 2: replace the template expression with env var reference
+			newScript = strings.ReplaceAll(
+				newScript,
+				fullExpr,
+				fmt.Sprintf("$%s", envVarName),
+			)
+
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/script",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+// Can only do print(f) fixed from RULE, unale to handle more
+// dynamic interpolation, also needed to test how to get the script
+// and expression because of python and go share similar interpolation
+// result in parameter unable to capture without /
+func ADES109Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
 			newScript := strings.ReplaceAll(
 				scriptCopy,
 				fullExpr,
-				fmt.Sprintf("$%s", envVarName),
+				fmt.Sprintf("{os.getenv('%s')}", envVarName),
+			)
+			newScript = strings.ReplaceAll(
+				newScript,
+				`print("`,
+				`print(f"`,
 			)
 			withPath := fmt.Sprintf(
 				"/jobs/%s/steps/%d/with/script",
@@ -813,7 +902,7 @@ func ADES108Fix(
 	}
 }
 
-func ADES109Fix(
+func ADES110Fix(
 	expression string,
 	jobID string,
 	stepIndex int,
@@ -839,17 +928,234 @@ func ADES109Fix(
 				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
 			}
 			envVarName := GenerateEnvVarName(cleanExpr)
-			osEnvVarName := GenerateOsEnvVarName(cleanExpr)
 			if !strings.Contains(scriptCopy, fullExpr) {
 				return content, false, nil
 			}
-			newScript := strings.ReplaceAll(
-				scriptCopy,
+			newScript := strings.ReplaceAll(scriptCopy, "'", "\"")
+
+			newScript = strings.ReplaceAll(
+				newScript,
 				fullExpr,
-				fmt.Sprintf("$%s", osEnvVarName),
+				fmt.Sprintf("$env:%s", envVarName),
 			)
 			withPath := fmt.Sprintf(
 				"/jobs/%s/steps/%d/with/script",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES111Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			// Match the quoted GitHub expression: '${{ inputs.query }}'
+			quotedExpr := fmt.Sprintf("'%s'", fullExpr)
+
+			// Replace ONLY that with a double-quoted env var
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				quotedExpr,
+				fmt.Sprintf("\"$%s\"", envVarName),
+			)
+
+			// Optional: handle unquoted usage safely
+			newScript = strings.ReplaceAll(
+				newScript,
+				fullExpr,
+				fmt.Sprintf("$%s", envVarName),
+			)
+
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/cmd",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+// Exactly the same as ADES111
+func ADES112Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			// Match the quoted GitHub expression: '${{ inputs.query }}'
+			quotedExpr := fmt.Sprintf("'%s'", fullExpr)
+
+			// Replace ONLY that with a double-quoted env var
+			newScript := strings.ReplaceAll(
+				scriptCopy,
+				quotedExpr,
+				fmt.Sprintf("\"$%s\"", envVarName),
+			)
+
+			// Optional: handle unquoted usage safely
+			newScript = strings.ReplaceAll(
+				newScript,
+				fullExpr,
+				fmt.Sprintf("$%s", envVarName),
+			)
+
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/cmd",
+				jobID,
+				stepIndex,
+			)
+			operations = append(operations, yamlpatch.Operation{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(withPath),
+				Value: newScript,
+			})
+			stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(stepPath),
+				Value: map[string]interface{}{
+					"env": map[string]interface{}{
+						envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+					},
+				},
+			})
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES113Fix(
+	expression string,
+	jobID string,
+	stepIndex int,
+	script string,
+) Fix {
+	expressionCopy := strings.TrimSpace(expression)
+	scriptCopy := script
+	return Fix{
+		Title: "Move template expression to environment variable",
+		Description: fmt.Sprintf(
+			"Move template expression (%s) from script to an environment "+
+				"variable to prevent template injection vulnerabilities.",
+			expression,
+		),
+		Apply: func(content string) (string, bool, error) {
+			var operations []yamlpatch.Operation
+			var cleanExpr, fullExpr string
+			if strings.HasPrefix(expressionCopy, "${{") && strings.HasSuffix(expressionCopy, "}}") {
+				cleanExpr = strings.TrimSpace(expressionCopy[3 : len(expressionCopy)-2])
+				fullExpr = expressionCopy
+			} else {
+				cleanExpr = expressionCopy
+				fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+			}
+			envVarName := GenerateEnvVarName(cleanExpr)
+			if !strings.Contains(scriptCopy, fullExpr) {
+				return content, false, nil
+			}
+			newScript := strings.ReplaceAll(scriptCopy, "'", "\"")
+			newScript = strings.ReplaceAll(
+				newScript,
+				fullExpr,
+				fmt.Sprintf("$env:%s", envVarName),
+			)
+
+			withPath := fmt.Sprintf(
+				"/jobs/%s/steps/%d/with/inlineScript",
 				jobID,
 				stepIndex,
 			)

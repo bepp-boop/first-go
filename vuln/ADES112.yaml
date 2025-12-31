@@ -1,4 +1,4 @@
-name: ADES110
+name: ADES112
 
 on: workflow_dispatch
 
@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Example step
-        uses: Amadevus/pwsh-script@v2
+        uses: devorbitus/yq-action-output@v1.1
         with:
-          script: |
-            Write-Output 'Hello ${{ inputs.name }}'
+          cmd: yq eval '${{ inputs.query }}' 'config.yml'
