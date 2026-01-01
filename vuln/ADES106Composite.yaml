@@ -1,0 +1,9 @@
+name: ADES106Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: cardinalby/js-eval-action@v1
+      with:
+        expression: 1 + parseInt(${{ inputs.value }})

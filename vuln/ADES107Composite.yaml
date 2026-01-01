@@ -1,0 +1,10 @@
+name: ADES107Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: 8398a7/action-slack@v3
+      with:
+        custom_payload: |
+          { attachments: [{ color: '${{ inputs.color }}' }] }

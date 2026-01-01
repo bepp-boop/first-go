@@ -1,0 +1,14 @@
+name: ADES100Composite
+
+inputs:
+  name:
+    description: Name input
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Apply env var fix
+      run: |
+        echo "Hello ${{ inputs.name }}"
+      shell: bash

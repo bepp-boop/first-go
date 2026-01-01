@@ -1,0 +1,11 @@
+name: ADES113Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: azure/powershell@v2.0.0
+      with:
+        azPSVersion: latest
+        inlineScript: |
+          Write-Output 'Hello ${{ inputs.name }}'

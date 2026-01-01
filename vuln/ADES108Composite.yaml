@@ -1,0 +1,9 @@
+name: ADES108Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: appleboy/ssh-action@v1
+      with:
+        script: echo 'Hello ${{ inputs.name }}'

@@ -1,0 +1,9 @@
+name: ADES109Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: jannekem/run-python-script-action@v1
+      with:
+        script: print("Hello ${{ inputs.name }}")

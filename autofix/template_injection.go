@@ -344,6 +344,8 @@ func ADES101Fix(
 	}
 }
 
+func ADES101FixComposite() {}
+
 func ADES102Fix(
 	expression string,
 	jobID string,
@@ -417,6 +419,8 @@ func ADES102Fix(
 		},
 	}
 }
+
+func ADES102FixComposite() {}
 
 func ADES103Fix(
 	expression string,
@@ -493,6 +497,8 @@ func ADES103Fix(
 	}
 }
 
+func ADES103FixComposite() {}
+
 func ADES104Fix(
 	expression string,
 	jobID string,
@@ -556,6 +562,8 @@ func ADES104Fix(
 		},
 	}
 }
+
+func ADES104FixComposite() {}
 
 func ADES105Fix(
 	expression string,
@@ -621,6 +629,8 @@ func ADES105Fix(
 	}
 }
 
+func ADES105FixComposite() {}
+
 func ADES106Fix(
 	expression string,
 	jobID string,
@@ -685,6 +695,8 @@ func ADES106Fix(
 		},
 	}
 }
+
+func ADES106FixComposite() {}
 
 func ADES107Fix(
 	expression string,
@@ -761,6 +773,8 @@ func ADES107Fix(
 	}
 }
 
+func ADES107FixComposite() {}
+
 func ADES108Fix(
 	expression string,
 	jobID string,
@@ -829,6 +843,8 @@ func ADES108Fix(
 		},
 	}
 }
+
+func ADES108FixComposite() {}
 
 // Can only do print(f) fixed from RULE, unale to handle more
 // dynamic interpolation, also needed to test how to get the script
@@ -902,6 +918,8 @@ func ADES109Fix(
 	}
 }
 
+func ADES109FixComposite() {}
+
 func ADES110Fix(
 	expression string,
 	jobID string,
@@ -966,6 +984,8 @@ func ADES110Fix(
 		},
 	}
 }
+
+func ADES110FixComposite() {}
 
 func ADES111Fix(
 	expression string,
@@ -1041,6 +1061,8 @@ func ADES111Fix(
 		},
 	}
 }
+
+func ADES111FixComposite() {}
 
 // Exactly the same as ADES111
 func ADES112Fix(
@@ -1118,6 +1140,8 @@ func ADES112Fix(
 	}
 }
 
+func ADES112FixComposite() {}
+
 func ADES113Fix(
 	expression string,
 	jobID string,
@@ -1182,3 +1206,13 @@ func ADES113Fix(
 		},
 	}
 }
+
+func ADES113FixComposite() {}
+
+func process_step() {}
+
+//look at the report of the report, get the nessary data in the script(rule broken, steps number, where it is, the expression vulnerbility, script)
+
+func audit_step() {}
+
+//Resolve them

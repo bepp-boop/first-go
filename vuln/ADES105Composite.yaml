@@ -1,0 +1,11 @@
+name: ADES105Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Run command in Docker (vulnerable)
+      uses: addnab/docker-run-action@v3
+      with:
+        image: ubuntu:latest
+        run: |
+          echo "Running command: ${{ inputs.cmd }}"

@@ -1,0 +1,9 @@
+name: ADES102Composite
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: roots/issue-closer-action@v1
+      with:
+        issue-close-message: Closing ${{ github.event.issue.title }}

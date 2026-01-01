@@ -1,0 +1,13 @@
+name: ADES101Composite
+
+inputs:
+  name:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Example step
+      uses: actions/github-script@v6
+      with:
+        script: console.log('Hello ${{ inputs.name }}')

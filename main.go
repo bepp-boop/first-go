@@ -12,6 +12,18 @@ import (
 	yamlpatch "github.com/palantir/pkg/yamlpatch"
 )
 
+type FixApplyFunc func(oldContent string) (newContent *string, err error)
+
+type Fix struct {
+	Title       string
+	Description string
+	Apply       FixApplyFunc
+}
+
+func (f Fix) ApplyToContent(oldContent string) (*string, error) {
+	return f.Apply(oldContent)
+}
+
 func main() {
 	// Import from a different folder yaml and print it in template_injection
 	yamlfile := filepath.Join("vuln", "ADES107.yaml")
