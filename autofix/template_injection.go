@@ -138,7 +138,7 @@ func ADES100Fix(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in run: directive",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) to an environment variable to prevent "+
 				"template injection vulnerabilities.",
@@ -211,7 +211,7 @@ func ADES101Fix(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in action/github-script action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from with.script to an environment variable "+
 				"to prevent template injection vulnerabilities.",
@@ -286,7 +286,7 @@ func ADES102Fix(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in issue-close-message input of root/issues-closer-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from issue-close-message to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -360,7 +360,7 @@ func ADES103Fix(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in pr-close-message input of root/issues-closer-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from pr-close-message to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -433,9 +433,9 @@ func ADES104Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input in sergeysova/jq-action",
 		Description: fmt.Sprintf(
-			"Move template expression (%s) from issue-title to an environment "+
+			"Move template expression (%s) from cmd to an environment "+
 				"variable to prevent template injection vulnerabilities.",
 			expression,
 		),
@@ -561,9 +561,9 @@ func ADES106Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in expression input in cardinalby/js-eval-action",
 		Description: fmt.Sprintf(
-			"Move template expression (%s) from expression to an environment "+
+			"Move template expression (%s) in with/expression"+
 				"variable to prevent template injection vulnerabilities.",
 			expression,
 		),
@@ -626,7 +626,7 @@ func ADES107Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in custom_payload input in 8398a7/action-slack",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from custom_payload to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -692,6 +692,7 @@ func ADES107Fix(
 	}
 }
 
+// Need to double check again as two env is needed.
 func ADES108Fix(
 	expression string,
 	jobID string,
@@ -701,9 +702,9 @@ func ADES108Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of appleboy/ssh-action",
 		Description: fmt.Sprintf(
-			"Move template expression (%s) from script to an environment "+
+			"Move template expression (%s) from script of "+
 				"variable to prevent template injection vulnerabilities.",
 			expression,
 		),
@@ -752,6 +753,15 @@ func ADES108Fix(
 					},
 				},
 			})
+
+			// Add inside with as well
+			withPath = fmt.Sprintf("/jobs/%s/steps/%d/with", jobID, stepIndex)
+			operations = append(operations, yamlpatch.Operation{
+				Type: yamlpatch.OperationAdd,
+				Path: yamlpatch.MustParsePath(withPath),
+				Value: map[string]interface{}{
+					"envs": envVarName},
+			})
 			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
 			if err != nil {
 				return "", false, err
@@ -774,7 +784,7 @@ func ADES109Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of jannekem/run-python-script-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -842,7 +852,7 @@ func ADES110Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of Amadevus/pwsh-script",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -907,7 +917,7 @@ func ADES111Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input of mikefarah/yg",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -983,7 +993,7 @@ func ADES112Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input of devorbitus/yg-action-output",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1058,7 +1068,7 @@ func ADES113Fix(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template in expression in inLineScript of azure/powershell",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1124,10 +1134,10 @@ func ADES100FixComposite(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in run: directive",
 		Description: fmt.Sprintf(
-			"Move template expression (%s) to an environment variable in a composite "+
-				"action to prevent template injection vulnerabilities.",
+			"Move template expression (%s) to an environment variable to prevent "+
+				"template injection vulnerabilities.",
 			expression,
 		),
 
@@ -1194,7 +1204,7 @@ func ADES101FixComposite(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in action/github-script action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) to an environment variable to prevent "+
 				"template injection vulnerabilities.",
@@ -1265,7 +1275,7 @@ func ADES102FixComposite(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in issue-close-message input of root/issues-closer-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from issue-close-message to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1336,7 +1346,7 @@ func ADES103FixComposite(
 	scriptCopy := script
 
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in pr-close-message input of root/issues-closer-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from pr-close-message to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1407,7 +1417,7 @@ func ADES104FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input in sergeysova/jq-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from issue-title to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1463,7 +1473,6 @@ func ADES104FixComposite(
 
 func ADES105FixComposite(
 	expression string,
-	jobID string,
 	stepIndex int,
 	runInput string,
 ) Fix {
@@ -1532,7 +1541,7 @@ func ADES106FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in expression input in cardinalby/js-eval-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from expression to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1595,7 +1604,7 @@ func ADES107FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in custom_payload input in 8398a7/action-slack",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from custom_payload to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1668,7 +1677,7 @@ func ADES108FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of appleboy/ssh-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1735,7 +1744,7 @@ func ADES109FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of jannekem/run-python-script-action",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1801,7 +1810,7 @@ func ADES110FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in script input of Amadevus/pwsh-script",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1864,7 +1873,7 @@ func ADES111FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input of mikefarah/yg",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -1937,7 +1946,7 @@ func ADES112FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template expression in cmd input of devorbitus/yg-action-output",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
@@ -2010,7 +2019,7 @@ func ADES113FixComposite(
 	expressionCopy := strings.TrimSpace(expression)
 	scriptCopy := script
 	return Fix{
-		Title: "Move template expression to environment variable",
+		Title: "Fix template in expression in inLineScript of azure/powershell",
 		Description: fmt.Sprintf(
 			"Move template expression (%s) from script to an environment "+
 				"variable to prevent template injection vulnerabilities.",
