@@ -7,6 +7,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Apply env var fix
-        uses: ./env-fix-action
         run: |
             echo 'Hello ${{ inputs.name }}'

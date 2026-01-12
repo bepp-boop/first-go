@@ -1,6 +1,6 @@
 module example.com/first-go
 
-go 1.25.0
+go 1.25.5
 
 require github.com/palantir/pkg/yamlpatch v1.5.0
 

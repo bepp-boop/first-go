@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	// File handling imports
+	"flag"
 	"os"
 	"path/filepath"
-
 	// Import the autofix package
 	// <-- matches module + folder
-	yamlpatch "github.com/palantir/pkg/yamlpatch"
 )
 
 type FixApplyFunc func(oldContent string) (newContent *string, err error)
@@ -25,26 +24,31 @@ func (f Fix) ApplyToContent(oldContent string) (*string, error) {
 }
 
 func main() {
-	// Import from a different folder yaml and print it in template_injection
-	yamlfile := filepath.Join("vuln", "ADES107.yaml")
+	// Define flags
+	jsonOut := flag.Bool("json", false, "Output result as JSON")
+	flag.Parse()
 
-	data, err := os.ReadFile(yamlfile)
+	// After flag.Parse(), remaining args are positional
+	args := flag.Args()
+	if len(args) < 1 {
+		fmt.Println("Usage: ades [--json] <gha-yaml-file>")
+		os.Exit(1)
+	}
+
+	// Read YAML path from positional argument
+	yamlPath := args[0]
+
+	// Normalize path (important on Windows)
+	absPath, err := filepath.Abs(yamlPath)
 	if err != nil {
-		fmt.Println("Error reading YAML file:", err)
-		return
+		fmt.Println("Invalid path:", err)
+		os.Exit(1)
 	}
 
-	test := yamlpatch.Operation{
-		Type:  yamlpatch.OperationReplace,
-		Path:  yamlpatch.MustParsePath("/jobs/example_job/steps/0/with/custom_payload"),
-		Value: "Hello",
-	}
+	fmt.Println("Using YAML:", absPath)
+	fmt.Println("JSON output:", *jsonOut)
 
-	modify, err := yamlpatch.Apply(data, yamlpatch.Patch([]yamlpatch.Operation{test}))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(string(modify))
-
+	// ---- use absPath here ----
+	// data, err := os.ReadFile(absPath)
+	// ...
 }
