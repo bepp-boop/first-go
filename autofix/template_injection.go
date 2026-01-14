@@ -2074,10 +2074,6 @@ func ADES113FixComposite(
 	}
 }
 
-func process_step() {}
-
-//look at the report of the report, get the nessary data in the script(rule broken, steps number, where it is, the expression vulnerbility, script)
-
 func audit_step() {}
 
 //Resolve them

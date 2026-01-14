@@ -1,11 +1,16 @@
 name: ADES100
 on:
   workflow_dispatch:
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - env:
+          INPUTS_NAME: ${{ inputs.name }}
       - name: Apply env var fix
         run: |
-            echo 'Hello ${{ inputs.name }}'
+          echo 'Hello $INPUTS_NAME'
+      - name: Example step
+        uses: actions/github-script@v6
+        with:
+          script: console.log('Hello ${{ inputs.name }}')
