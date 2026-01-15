@@ -98,7 +98,7 @@ func TestADES100Fix(t *testing.T) {
 }
 
 func TestADES101Fix(t *testing.T) {
-	yamlfile := filepath.Join("vuln", "ADES100.yaml")
+	yamlfile := filepath.Join("vuln", "ADES101.yaml")
 	originalYAML, err := os.ReadFile(yamlfile)
 	if err != nil {
 		t.Fatalf("error reading YAML file: %v", err)
@@ -106,10 +106,10 @@ func TestADES101Fix(t *testing.T) {
 
 	// Create the fix (this does NOT apply it yet)
 	fix := autofix.ADES101Fix(
-		"${{ inputs.notname }}",
-		"test",
-		2,
-		`console.log('Hello ${{ inputs.notname }}')`,
+		"${{ inputs.name }}",
+		"example_job",
+		0,
+		`console.log('Hello ${{ inputs.name }}')`,
 	)
 	// Apply the fix
 	modified, changed, err := fix.Apply(string(originalYAML))
