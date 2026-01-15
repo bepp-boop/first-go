@@ -1,12 +1,19 @@
-    name: ADES101
-    on: workflow_dispatch
-    jobs:
-          example_job:
-            runs-on: ubuntu-latest
-            steps:
-              - name: Example step
-                uses: actions/github-script@v6
-                with:
-                  script: console.log('Hello ${process.env.INPUTS_NAME}')
-                env:
-                  INPUTS_NAME: ${{ inputs.name }}
+name: ADES101
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Name to greet"
+
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Example step
+        uses: actions/github-script@v6
+        env:
+          INPUTS_NAME: ${{ inputs.name }}
+        with:
+          script: |
+            console.log(`Hello ${process.env.INPUTS_NAME}`)
