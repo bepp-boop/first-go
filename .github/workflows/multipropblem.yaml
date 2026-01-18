@@ -13,6 +13,7 @@ jobs:
         uses: roots/issue-closer-action@v1.2
         with:
           issue-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
+          issue-pattern: ".*guidelines for Contributing.*"
         env:
           GITHUB_EVENT_ISSUE_TITLE: ${{ github.event.issue.title }}
       - name: ADES101
