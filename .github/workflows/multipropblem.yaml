@@ -20,6 +20,6 @@ jobs:
       - name: ADES101
         uses: actions/github-script@v6
         with:
-          script: console.log('Hello ${process.env.INPUTS_NAME}')
+          script: console.log(`Hello ${process.env.INPUTS_NAME}`)
         env:
           INPUTS_NAME: ${{ inputs.name }}
