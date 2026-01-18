@@ -5,12 +5,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - env:
-          INPUTS_NAME: ${{ inputs.name }}
       - name: Apply env var fix
         run: |
-          echo "Hello $INPUTS_NAME"
-      - name: ADES101Test
-        uses: actions/github-script@v6
-        with:
-          script: console.log('Hello ${{ inputs.notname }}')
+          echo "Hello ${{ inputs.name }}"

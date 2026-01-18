@@ -181,8 +181,23 @@ func applyExpressionFix(
 
 	var operations []yamlpatch.Operation
 
-	// Replace the input key
-	inputPath := fmt.Sprintf("/jobs/%s/steps/%d/with/%s", jobID, stepIndex, inputKey)
+	var inputPath string
+
+	if inputKey == "run" {
+		inputPath = fmt.Sprintf(
+			"/jobs/%s/steps/%d/run",
+			jobID,
+			stepIndex,
+		)
+	} else {
+		inputPath = fmt.Sprintf(
+			"/jobs/%s/steps/%d/with/%s",
+			jobID,
+			stepIndex,
+			inputKey,
+		)
+	}
+
 	operations = append(operations, yamlpatch.Operation{
 		Type:  yamlpatch.OperationReplace,
 		Path:  yamlpatch.MustParsePath(inputPath),
@@ -190,14 +205,12 @@ func applyExpressionFix(
 	})
 
 	// Add env var to step
-	stepPath := fmt.Sprintf("/jobs/%s/steps/%d", jobID, stepIndex)
+	stepPath := fmt.Sprintf("/jobs/%s/steps/%d/env", jobID, stepIndex)
 	operations = append(operations, yamlpatch.Operation{
 		Type: yamlpatch.OperationAdd,
 		Path: yamlpatch.MustParsePath(stepPath),
 		Value: map[string]interface{}{
-			"env": map[string]interface{}{
-				envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
-			},
+			envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
 		},
 	})
 
@@ -205,82 +218,6 @@ func applyExpressionFix(
 	if err != nil {
 		return "", false, err
 	}
-	return string(modified), true, nil
-}
-
-// --------------------- Shared helper for Composite Fixes ---------------------
-
-func applyCompositeFix(
-	content, expression string, stepIndex int,
-	inputKey, scriptCopy string, style ReplacementStyle,
-) (string, bool, error) {
-
-	exprTrim := strings.TrimSpace(expression)
-	cleanExpr := exprTrim
-	fullExpr := exprTrim
-
-	if strings.HasPrefix(exprTrim, "${{") && strings.HasSuffix(exprTrim, "}}") {
-		cleanExpr = strings.TrimSpace(exprTrim[3 : len(exprTrim)-2])
-		fullExpr = exprTrim
-	} else {
-		fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
-	}
-
-	envVarName := GenerateEnvVarName(cleanExpr)
-	processedEnvVar := GenerateProcessedEnvVarName(cleanExpr)
-
-	if !strings.Contains(scriptCopy, fullExpr) {
-		return content, false, nil
-	}
-
-	// Determine replacement based on style
-	var replacement string
-	switch style {
-	case Shell:
-		replacement = fmt.Sprintf("$%s", envVarName)
-	case Python:
-		replacement = fmt.Sprintf("{os.getenv('%s')}", envVarName)
-	case PowerShell:
-		replacement = fmt.Sprintf("$env:%s", envVarName)
-	case Processed:
-		replacement = fmt.Sprintf("${%s}", processedEnvVar)
-	}
-
-	// Handle quoted/unquoted expressions
-	quotedExpr := fmt.Sprintf("'%s'", fullExpr)
-	newScript := strings.ReplaceAll(scriptCopy, quotedExpr, replacement)
-	newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
-
-	// Optional: Python f-string adjustment
-	if style == Python {
-		newScript = strings.ReplaceAll(newScript, `print("`, `print(f"`)
-	}
-
-	// Replace the input key
-	inputPath := fmt.Sprintf("/runs/steps/%d/with/%s", stepIndex, inputKey)
-	operations := []yamlpatch.Operation{{
-		Type:  yamlpatch.OperationReplace,
-		Path:  yamlpatch.MustParsePath(inputPath),
-		Value: newScript,
-	}}
-
-	// Add env to step
-	stepPath := fmt.Sprintf("/runs/steps/%d", stepIndex)
-	operations = append(operations, yamlpatch.Operation{
-		Type: yamlpatch.OperationAdd,
-		Path: yamlpatch.MustParsePath(stepPath),
-		Value: map[string]interface{}{
-			"env": map[string]interface{}{
-				envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
-			},
-		},
-	})
-
-	modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
-	if err != nil {
-		return "", false, err
-	}
-
 	return string(modified), true, nil
 }
 
@@ -443,6 +380,83 @@ func ADES113Fix(expression, jobID string, stepIndex int, script string) Fix {
 		},
 	}
 }
+
+// --------------------- Shared helper for Composite Fixes ---------------------
+
+func applyCompositeFix(
+	content, expression string, stepIndex int,
+	inputKey, scriptCopy string, style ReplacementStyle,
+) (string, bool, error) {
+
+	exprTrim := strings.TrimSpace(expression)
+	cleanExpr := exprTrim
+	fullExpr := exprTrim
+
+	if strings.HasPrefix(exprTrim, "${{") && strings.HasSuffix(exprTrim, "}}") {
+		cleanExpr = strings.TrimSpace(exprTrim[3 : len(exprTrim)-2])
+		fullExpr = exprTrim
+	} else {
+		fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+	}
+
+	envVarName := GenerateEnvVarName(cleanExpr)
+	processedEnvVar := GenerateProcessedEnvVarName(cleanExpr)
+
+	if !strings.Contains(scriptCopy, fullExpr) {
+		return content, false, nil
+	}
+
+	// Determine replacement based on style
+	var replacement string
+	switch style {
+	case Shell:
+		replacement = fmt.Sprintf("$%s", envVarName)
+	case Python:
+		replacement = fmt.Sprintf("{os.getenv('%s')}", envVarName)
+	case PowerShell:
+		replacement = fmt.Sprintf("$env:%s", envVarName)
+	case Processed:
+		replacement = fmt.Sprintf("${%s}", processedEnvVar)
+	}
+
+	// Handle quoted/unquoted expressions
+	quotedExpr := fmt.Sprintf("'%s'", fullExpr)
+	newScript := strings.ReplaceAll(scriptCopy, quotedExpr, replacement)
+	newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+
+	// Optional: Python f-string adjustment
+	if style == Python {
+		newScript = strings.ReplaceAll(newScript, `print("`, `print(f"`)
+	}
+
+	// Replace the input key
+	inputPath := fmt.Sprintf("/runs/steps/%d/with/%s", stepIndex, inputKey)
+	operations := []yamlpatch.Operation{{
+		Type:  yamlpatch.OperationReplace,
+		Path:  yamlpatch.MustParsePath(inputPath),
+		Value: newScript,
+	}}
+
+	// Add env to step
+	stepPath := fmt.Sprintf("/runs/steps/%d", stepIndex)
+	operations = append(operations, yamlpatch.Operation{
+		Type: yamlpatch.OperationAdd,
+		Path: yamlpatch.MustParsePath(stepPath),
+		Value: map[string]interface{}{
+			"env": map[string]interface{}{
+				envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+			},
+		},
+	})
+
+	modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+	if err != nil {
+		return "", false, err
+	}
+
+	return string(modified), true, nil
+}
+
 func ADES100FixComposite(expression string, stepIndex int, script string) Fix {
 	return Fix{
 		Title:       "Fix template expression in run: directive",
