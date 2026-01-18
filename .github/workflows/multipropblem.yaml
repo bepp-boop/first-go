@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Example step
-        uses: roots/issue-closer-action@main
+        uses: roots/issue-closer@1.0
         with:
           issue-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
         env:
