@@ -14,6 +14,7 @@ jobs:
         with:
           issue-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
           issue-pattern: ".*guidelines for Contributing.*"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_EVENT_ISSUE_TITLE: ${{ github.event.issue.title }}
       - name: ADES101
