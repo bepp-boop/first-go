@@ -1,0 +1,17 @@
+name: ADES107
+on: 
+  workflow_dispatch:
+    inputs:
+      color:
+        description: "Colour"
+        
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug payload
+        run: |
+          echo '{ attachments: [{ color: '"$INPUTS_COLOR"' }] }'
+        env:
+          INPUTS_COLOR: ${{ inputs.color }}
+
