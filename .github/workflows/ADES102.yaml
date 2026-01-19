@@ -1,7 +1,5 @@
 name: ADES102
-on:
-  workflow_dispatch
-
+on: workflow_dispatch
 jobs:
   example_job:
     runs-on: ubuntu-latest
@@ -9,6 +7,8 @@ jobs:
       - name: Example step
         uses: roots/issue-closer-action@v1
         with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
+          issue-pattern: ".*guidelines for Contributing.*"
         env:
           GITHUB_EVENT_ISSUE_TITLE: ${{ github.event.issue.title }}

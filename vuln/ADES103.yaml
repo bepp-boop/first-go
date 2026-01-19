@@ -10,3 +10,4 @@ jobs:
         uses: roots/issue-closer-action@v1
         with:
           pr-close-message: Closing ${{ github.event.issue.title }}
+          issue-pattern: ".*guidelines for Contributing.*"

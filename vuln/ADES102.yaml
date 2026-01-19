@@ -1,5 +1,5 @@
 name: ADES102
-
+on: workflow_dispatch
 jobs:
   example_job:
     runs-on: ubuntu-latest
@@ -8,3 +8,4 @@ jobs:
         uses: roots/issue-closer-action@v1
         with:
           issue-close-message: Closing ${{ github.event.issue.title }}
+          issue-pattern: ".*guidelines for Contributing.*"
