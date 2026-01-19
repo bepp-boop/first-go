@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       color:
-        description: "Name to greet"
+        description: "Colour"
         
 jobs:
   example_job:
@@ -13,5 +13,6 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           custom_payload: '{ attachments: [{ color: process.env.INPUTS_COLOR }] }'
+          status: ${{job.status}}
         env:
           INPUTS_COLOR: ${{ inputs.color }}
