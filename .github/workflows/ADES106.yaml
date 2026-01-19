@@ -1,5 +1,9 @@
 name: ADES106
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      value:
+        default: "1"
 jobs:
   example_job:
     runs-on: ubuntu-latest

@@ -1,7 +1,10 @@
 name: ADES109
 
-on: workflow_dispatch
-
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        default: "World"
 jobs:
   example_job:
     runs-on: ubuntu-latest

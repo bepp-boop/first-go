@@ -1,5 +1,10 @@
 name: ADES107
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      color:
+        default: "red"
+
 jobs:
   example_job:
     runs-on: ubuntu-latest
