@@ -192,8 +192,6 @@ func applyExpressionFix(
 	switch style {
 	default:
 		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
-	case ADES100:
-		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
 	case ADES101:
 		// Match any single-quoted string that contains the template expression
 		re := regexp.MustCompile(`'([^']*\$\{\{\s*` + regexp.QuoteMeta(cleanExpr) + `\s*\}\}[^']*)'`)
@@ -216,7 +214,29 @@ func applyExpressionFix(
 		// Remove quotation marks around the full expression if present
 		re := regexp.MustCompile(`["']` + regexp.QuoteMeta(fullExpr) + `["']`)
 		newScript = re.ReplaceAllString(newScript, replacement)
+	case ADES108:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
+	case ADES109:
+		//Change from print(" to print(f)
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		newScript = strings.ReplaceAll(newScript, "print(\"", "print(f\"")
+	case ADES110:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
+	case ADES111, ADES112:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Remove single quotes around it
+		newScript = strings.ReplaceAll(newScript, "'"+replacement+"'", replacement)
 
+		// Wrap in exactly one double quote
+		newScript = strings.ReplaceAll(newScript, replacement, `"`+replacement+`"`)
+	case ADES113:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
 	}
 
 	var operations []yamlpatch.Operation
@@ -253,6 +273,16 @@ func applyExpressionFix(
 			envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
 		},
 	})
+
+	//Add extra env for ADES108
+	if style == ADES108 {
+		inputPath = fmt.Sprintf("/jobs/%s/steps/%d/with/envs", jobID, stepIndex)
+		operations = append(operations, yamlpatch.Operation{
+			Type:  yamlpatch.OperationAdd,
+			Path:  yamlpatch.MustParsePath(inputPath),
+			Value: envVarName,
+		})
+	}
 
 	modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
 	if err != nil {
@@ -417,6 +447,284 @@ func ADES113Fix(expression, jobID string, stepIndex int, script string) Fix {
 		Description: fmt.Sprintf("Move template expression (%s) from inlineScript to env", expression),
 		Apply: func(content string) (string, bool, error) {
 			return applyExpressionFix(content, expression, jobID, stepIndex, "inlineScript", script, ADES113)
+		},
+	}
+}
+
+func applyCompositeFix(
+	content, expression string, stepIndex int,
+	inputKey, scriptCopy string, style ReplacementStyle,
+) (string, bool, error) {
+
+	exprTrim := strings.TrimSpace(expression)
+	cleanExpr := exprTrim
+	fullExpr := exprTrim
+
+	if strings.HasPrefix(exprTrim, "${{") && strings.HasSuffix(exprTrim, "}}") {
+		cleanExpr = strings.TrimSpace(exprTrim[3 : len(exprTrim)-2])
+		fullExpr = exprTrim
+	} else {
+		fullExpr = fmt.Sprintf("${{ %s }}", cleanExpr)
+	}
+
+	envVarName := GenerateEnvVarName(cleanExpr)
+
+	if !strings.Contains(scriptCopy, fullExpr) {
+		return content, false, nil
+	}
+
+	// Determine replacement text
+	var replacement string
+	switch style {
+	case ADES100, ADES104, ADES108, ADES111, ADES112:
+		replacement = fmt.Sprintf("$%s", envVarName)
+	case ADES109:
+		replacement = fmt.Sprintf("{os.getenv('%s')}", envVarName)
+	case ADES106:
+		replacement = fmt.Sprintf("env.%s", envVarName)
+	case ADES101, ADES102, ADES103:
+		replacement = fmt.Sprintf("${process.env.%s}", envVarName)
+	case ADES107:
+		replacement = fmt.Sprintf("process.env.%s", envVarName)
+	case ADES110, ADES113:
+		replacement = fmt.Sprintf("$env:%s", envVarName)
+	}
+
+	newScript := scriptCopy
+
+	switch style {
+	default:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+	case ADES101:
+		// Match any single-quoted string that contains the template expression
+		re := regexp.MustCompile(`'([^']*\$\{\{\s*` + regexp.QuoteMeta(cleanExpr) + `\s*\}\}[^']*)'`)
+		newScript = re.ReplaceAllStringFunc(newScript, func(s string) string {
+			// Remove surrounding single quotes
+			inner := s[1 : len(s)-1]
+			// Replace the expression with processed env var
+			inner = strings.ReplaceAll(inner, fullExpr, replacement)
+			fmt.Println(inner)
+			// Wrap with backticks
+			return "`" + inner + "`"
+		})
+	case ADES104:
+		// Add double quotes around the full expression if not already present
+		re := regexp.MustCompile(`(?m)([^"]|^)(` + regexp.QuoteMeta(fullExpr) + `)([^"]|$)`)
+		newScript = re.ReplaceAllStringFunc(newScript, func(s string) string {
+			return strings.ReplaceAll(s, fullExpr, fmt.Sprintf(`"%s"`, replacement))
+		})
+	case ADES107:
+		// Remove quotation marks around the full expression if present
+		re := regexp.MustCompile(`["']` + regexp.QuoteMeta(fullExpr) + `["']`)
+		newScript = re.ReplaceAllString(newScript, replacement)
+	case ADES108:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
+	case ADES109:
+		//Change from print(" to print(f)
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		newScript = strings.ReplaceAll(newScript, "print(\"", "print(f\"")
+	case ADES110:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
+	case ADES111, ADES112:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Remove single quotes around it
+		newScript = strings.ReplaceAll(newScript, "'"+replacement+"'", replacement)
+
+		// Wrap in exactly one double quote
+		newScript = strings.ReplaceAll(newScript, replacement, `"`+replacement+`"`)
+	case ADES113:
+		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
+		// Replace single quotes with double quotes
+		newScript = strings.ReplaceAll(newScript, "'", `"`)
+	}
+
+	// Replace the input key
+	inputPath := fmt.Sprintf("/runs/steps/%d/with/%s", stepIndex, inputKey)
+	operations := []yamlpatch.Operation{{
+		Type:  yamlpatch.OperationReplace,
+		Path:  yamlpatch.MustParsePath(inputPath),
+		Value: newScript,
+	}}
+
+	// Add env to step
+	stepPath := fmt.Sprintf("/runs/steps/%d", stepIndex)
+	operations = append(operations, yamlpatch.Operation{
+		Type: yamlpatch.OperationAdd,
+		Path: yamlpatch.MustParsePath(stepPath),
+		Value: map[string]interface{}{
+			"env": map[string]interface{}{
+				envVarName: fmt.Sprintf("${{ %s }}", cleanExpr),
+			},
+		},
+	})
+
+	modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+	if err != nil {
+		return "", false, err
+	}
+
+	return string(modified), true, nil
+}
+
+func ADES100FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in run: directive",
+		Description: fmt.Sprintf("Move template expression (%s) to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "run", script, ADES100)
+		},
+	}
+}
+
+func ADES101FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in action/github-script action",
+		Description: fmt.Sprintf("Move template expression (%s) to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "run", script, ADES101)
+		},
+	}
+}
+
+func ADES102FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in issue-close-message input of root/issues-closer-action",
+		Description: fmt.Sprintf("Move template expression (%s) from issue-close-message to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "issue-close-message", script, ADES102)
+		},
+	}
+}
+
+func ADES103FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in pr-close-message input of root/issues-closer-action",
+		Description: fmt.Sprintf("Move template expression (%s) from pr-close-message to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "pr-close-message", script, ADES103)
+		},
+	}
+}
+
+func ADES104FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in cmd input in sergeysova/jq-action",
+		Description: fmt.Sprintf("Move template expression (%s) from issue-title to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "cmd", script, ADES104)
+		},
+	}
+}
+
+func ADES105FixComposite(expression string, stepIndex int, runInput string) Fix {
+	return Fix{
+		Title:       "Remove unsafe template expression from docker run input",
+		Description: fmt.Sprintf("Remove template expression (%s) from run input of addnab/docker-run-action. No safe usage exists.", expression),
+		Apply: func(content string) (string, bool, error) {
+			exprTrim := strings.TrimSpace(expression)
+			fullExpr := exprTrim
+			if !strings.HasPrefix(exprTrim, "${{") || !strings.HasSuffix(exprTrim, "}}") {
+				fullExpr = fmt.Sprintf("${{ %s }}", exprTrim)
+			}
+			if !strings.Contains(runInput, fullExpr) {
+				return content, false, nil
+			}
+			newRun := strings.ReplaceAll(runInput, fullExpr, "")
+			runPath := fmt.Sprintf("/runs/steps/%d/with/run", stepIndex)
+			operations := []yamlpatch.Operation{{
+				Type:  yamlpatch.OperationReplace,
+				Path:  yamlpatch.MustParsePath(runPath),
+				Value: strings.TrimSpace(newRun),
+			}}
+			modified, err := yamlpatch.Apply([]byte(content), yamlpatch.Patch(operations))
+			if err != nil {
+				return "", false, err
+			}
+			return string(modified), true, nil
+		},
+	}
+}
+
+func ADES106FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in expression input in cardinalby/js-eval-action",
+		Description: fmt.Sprintf("Move template expression (%s) from expression to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "expression", script, ADES106)
+		},
+	}
+}
+
+func ADES107FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in custom_payload input in 8398a7/action-slack",
+		Description: fmt.Sprintf("Move template expression (%s) from custom_payload to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "custom_payload", script, ADES107)
+		},
+	}
+}
+
+func ADES108FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in script input of appleboy/ssh-action",
+		Description: fmt.Sprintf("Move template expression (%s) from script to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "script", script, ADES108)
+		},
+	}
+}
+
+func ADES109FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in script input of jannekem/run-python-script-action",
+		Description: fmt.Sprintf("Move template expression (%s) from script to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "script", script, ADES109)
+		},
+	}
+}
+
+func ADES110FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in script input of Amadevus/pwsh-script",
+		Description: fmt.Sprintf("Move template expression (%s) from script to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "script", script, ADES110)
+		},
+	}
+}
+
+func ADES111FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in cmd input of mikefarah/yg",
+		Description: fmt.Sprintf("Move template expression (%s) from cmd to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "cmd", script, ADES111)
+		},
+	}
+}
+
+func ADES112FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in cmd input of devorbitus/yg-action-output",
+		Description: fmt.Sprintf("Move template expression (%s) from cmd to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "cmd", script, ADES112)
+		},
+	}
+}
+
+func ADES113FixComposite(expression string, stepIndex int, script string) Fix {
+	return Fix{
+		Title:       "Fix template expression in inlineScript input of azure/powershell",
+		Description: fmt.Sprintf("Move template expression (%s) from inlineScript to an environment variable to prevent template injection vulnerabilities.", expression),
+		Apply: func(content string) (string, bool, error) {
+			return applyCompositeFix(content, expression, stepIndex, "inlineScript", script, ADES113)
 		},
 	}
 }

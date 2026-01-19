@@ -1,9 +1,8 @@
 name: ADES101
-
-on: 
+on:
   workflow_dispatch:
     inputs:
-      name: 
+      name:
         default: "World"
 jobs:
   example_job:
@@ -12,6 +11,6 @@ jobs:
       - name: Example step
         uses: actions/github-script@v6
         with:
-          script: console.log('Hello ${{ inputs.name }}')
-
-        
+          script: console.log(`Hello ${process.env.INPUTS_NAME}`)
+        env:
+          INPUTS_NAME: ${{ inputs.name }}

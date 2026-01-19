@@ -1,0 +1,11 @@
+name: ADES105
+on: workflow_dispatch
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run command in Docker (vulnerable)
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ubuntu:latest
+          run: 'echo "Running command: "'

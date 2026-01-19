@@ -1,0 +1,12 @@
+name: ADES104
+on: workflow_dispatch
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Example step
+        uses: sergeysova/jq-action@v2
+        with:
+          cmd: jq .version "$GITHUB_EVENT_INPUTS_FILE" -r
+        env:
+          GITHUB_EVENT_INPUTS_FILE: ${{ github.event.inputs.file }}

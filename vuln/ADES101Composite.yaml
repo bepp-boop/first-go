@@ -1,8 +1,10 @@
 name: ADES101Composite
 
-inputs:
-  name:
-    required: true
+on: 
+  workflow_dispatch:
+    inputs:
+      name: 
+        default: "World"
 
 runs:
   using: composite

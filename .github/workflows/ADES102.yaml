@@ -1,6 +1,4 @@
-name: Multiproblem
-on:
-workflow_dispatch:
+name: ADES102
 jobs:
   example_job:
     runs-on: ubuntu-latest
@@ -11,9 +9,3 @@ jobs:
           issue-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
         env:
           GITHUB_EVENT_ISSUE_TITLE: ${{ github.event.issue.title }}
-      - name: ADES101
-        uses: actions/github-script@v6
-        with:
-          script: console.log(`Hello ${process.env.INPUTS_NAME}`)
-        env:
-          INPUTS_NAME: ${{ inputs.name }}

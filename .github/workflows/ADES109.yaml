@@ -1,0 +1,12 @@
+name: ADES109
+
+on: workflow_dispatch
+
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Example step
+        uses: jannekem/run-python-script-action@v1
+        with:
+          script: print("Hello ${{ inputs.name }}")

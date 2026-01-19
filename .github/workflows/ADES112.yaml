@@ -1,0 +1,12 @@
+name: ADES112
+on: workflow_dispatch
+jobs:
+  example_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Example step
+        uses: devorbitus/yq-action-output@v1.1
+        with:
+          cmd: yq eval "$INPUTS_QUERY" 'config.yml'
+        env:
+          INPUTS_QUERY: ${{ inputs.query }}

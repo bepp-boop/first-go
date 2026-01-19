@@ -1,19 +1,15 @@
 name: ADES100
 on:
   workflow_dispatch:
+    inputs:
+      name:
+        default: "World"
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-        INPUTS_NOTNAME: ${{ inputs.notname }}
-        INPUTS_NAME: ${{ inputs.name }}
     steps:
       - name: Apply env var fix
-
         run: |
           echo "Hello $INPUTS_NAME"
-      - name: ADES101Test
-
-        uses: actions/github-script@v6
-        with:
-          script: console.log('Hello ${process.env.INPUTS_NOTNAME}')
+        env:
+          INPUTS_NAME: ${{ inputs.name }}

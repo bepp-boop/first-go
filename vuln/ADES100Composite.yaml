@@ -1,9 +1,9 @@
 name: ADES100Composite
-
-inputs:
-  name:
-    description: Name input
-    required: true
+on: 
+  workflow_dispatch:
+    inputs:
+      name: 
+        default: "World"
 
 runs:
   using: composite
