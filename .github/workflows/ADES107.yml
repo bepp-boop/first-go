@@ -1,0 +1,13 @@
+name: ADES107
+on: workflow_dispatch
+        
+        jobs:
+          example_job:
+            runs-on: ubuntu-latest
+            steps:
+              - name: Example step
+                uses: 8398a7/action-slack@v3
+                with:
+                  custom_payload: '{ attachments: [{ color: process.env.INPUTS_COLOR }] }'
+                env:
+                  INPUTS_COLOR: ${{ inputs.color }}
