@@ -1,4 +1,4 @@
-name: ADES107
+name: ADES108
 on: 
   workflow_dispatch:
     inputs:
@@ -9,9 +9,11 @@ jobs:
   example_job:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug payload
-        run: |
-          echo '{ attachments: [{ color: '"$INPUTS_COLOR"' }] }'
+      - name: Example step
+        uses: appleboy/ssh-action@v1
+        with:
+          script: echo 'Hello $INPUTS_NAME'
         env:
-          INPUTS_COLOR: ${{ inputs.color }}
+          INPUTS_NAME: ${{ inputs.name }}
+
 
