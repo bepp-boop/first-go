@@ -1,9 +1,0 @@
-name: ADES111Composite
-
-runs:
-  using: composite
-  steps:
-    - name: Example step
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq '${{ inputs.query }}' 'config.yml'

@@ -1,9 +1,0 @@
-name: ADES104Composite
-
-runs:
-  using: composite
-  steps:
-    - name: Example step
-      uses: sergeysova/jq-action@v2
-      with:
-        cmd: jq .version ${{ github.event.inputs.file }} -r

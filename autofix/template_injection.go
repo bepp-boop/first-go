@@ -214,6 +214,7 @@ func applyExpressionFix(
 		// Remove quotation marks around the full expression if present
 		re := regexp.MustCompile(`["']` + regexp.QuoteMeta(fullExpr) + `["']`)
 		newScript = re.ReplaceAllString(newScript, replacement)
+		newScript = strings.ReplaceAll(newScript, "'", " ")
 	case ADES108:
 		newScript = strings.ReplaceAll(newScript, fullExpr, replacement)
 		// Replace single quotes with double quotes

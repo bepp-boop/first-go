@@ -1,4 +1,4 @@
-name: ADES108
+name: ADES107Debug
 on: 
   workflow_dispatch:
     inputs:

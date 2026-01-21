@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  changed_files:
+    runs-on: ubuntu-latest
+    name: Test changed-files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+
+      - name: List all changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+          done
+
+      - name: Get all changed markdown files
+        id: changed-markdown-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+             **.md
+
+      - name: List all changed files markdown files
+        if: steps.changed-markdown-files.outputs.any_changed == 'true'
+        run: |
+          for file in ${{ steps.changed-markdown-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+          done
+
+      - name: Get all test, doc and src files that have changed
+        id: changed-files-yaml
+        uses: tj-actions/changed-files@v40
+        with:
+          files_yaml: |
+            doc:
+              - '**.md'
+              - docs/**
+              - README.md
+            test:
+              - test/**
+              - '!test/**.md'
+            src:
+              - src/**
+
+      - name: Run step if test file(s) change
+        if: steps.changed-files-yaml.outputs.test_any_changed == 'true'
+        run: |
+          echo "One or more test file(s) has changed."
+          echo "List all the files that have changed: ${{ steps.changed-files-yaml.outputs.test_all_changed_files }}"
+
+      - name: Run step if doc file(s) change
+        if: steps.changed-files-yaml.outputs.doc_any_changed == 'true'
+        run: |
+          echo "One or more doc file(s) has changed."
+          echo "List all the files that have changed: ${{ steps.changed-files-yaml.outputs.doc_all_changed_files }}"
+
+      - name: Get changed files in the docs folder
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v40
+        with:
+          files: docs/*.{js,html}
+          files_ignore: docs/static.js
+
+      - name: Run step if any file(s) in the docs folder change
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
+        run: |
+          echo "One or more files in the docs folder has changed."
+          echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"

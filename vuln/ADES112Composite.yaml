@@ -1,9 +1,0 @@
-name: ADES112Composite
-
-runs:
-  using: composite
-  steps:
-    - name: Example step
-      uses: devorbitus/yq-action-output@v1.1
-      with:
-        cmd: yq eval '${{ inputs.query }}' 'config.yml'

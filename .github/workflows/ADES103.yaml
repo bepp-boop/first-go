@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Example step
-        uses: roots/issue-closer-action@v1
+        uses: roots/issue-closer-action@v1.2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}  
           pr-close-message: Closing ${process.env.GITHUB_EVENT_ISSUE_TITLE}
