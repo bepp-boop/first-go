@@ -16,6 +16,7 @@ func TestGenerateEnvVarName(t *testing.T) {
 		input    string
 		expected string
 	}{
+		{"steps.determine-branch.outputs.target_branch", "STEPS_DETERMINE_BRANCH_OUTPUTS_TARGET_BRANCH"},
 		{"github.event.issue.title", "GITHUB_EVENT_ISSUE_TITLE"},
 		{"secret.api-config", "SECRET_API_CONFIG"},
 		{"fromJSON(secrets.config)", "CONFIG"},
@@ -54,6 +55,47 @@ func TestGenerateProcessedEnvVarName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSpecific(t *testing.T) {
+	yamlfile := filepath.Join("security-incident", "workflow", "GHSA-ghm2-rq8q-wrhc.yaml")
+	originalYAML, err := os.ReadFile(yamlfile)
+	if err != nil {
+		t.Fatalf("error reading YAML file: %v", err)
+	}
+
+	// Create the fix (this does NOT apply it yet)
+	fix := autofix.ADES100Fix(
+		"${{ steps.verify-changed-files.outputs.changed_files }}",
+		"job",
+		4,
+		`echo "Changed files: ${{ steps.verify-changed-files.outputs.changed_files }}""`,
+	)
+
+	// Apply the fix
+	modified, changed, err := fix.Apply(string(originalYAML))
+	if err != nil {
+		t.Fatalf("unexpected error applying fix: %v", err)
+	}
+
+	if !changed {
+		t.Fatalf("expected fix to report changes, but changed=false")
+	}
+
+	// Assert: environment variable is added
+	if !strings.Contains(modified, "env:") {
+		t.Errorf("expected env block to be added")
+	}
+
+	if !strings.Contains(modified, "INPUTS_NAME") {
+		t.Errorf("expected generated environment variable name INPUTS_NAME")
+	}
+
+	// Assert: run script uses shell variable
+	if !strings.Contains(modified, "$INPUTS_NAME") {
+		t.Errorf("expected run script to reference $INPUTS_NAME")
+	}
+	t.Log(modified)
 }
 
 func TestADES100Fix(t *testing.T) {
