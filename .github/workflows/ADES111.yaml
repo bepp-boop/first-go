@@ -1,12 +1,24 @@
 name: ADES111
-on: workflow_dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: "yq query to run against config.yml"
+        required: false
+        default: ".app.name"
+
 jobs:
   example_job:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Example step
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq "$INPUTS_QUERY" 'config.yml'
+          cmd: yq eval "$INPUTS_QUERY" config.yml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
