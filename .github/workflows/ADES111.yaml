@@ -6,7 +6,7 @@ on:
       query:
         description: "yq query to run against config.yaml"
         required: false
-        default: "."
+        default: "'.app'"
 
 jobs:
   example_job:
