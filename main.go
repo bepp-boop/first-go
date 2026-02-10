@@ -15,18 +15,18 @@ import (
 )
 
 func main() {
-	yamlfile := filepath.Join("vuln", "ADES100.yaml")
+	yamlfile := filepath.Join("vuln", "ADES111.yaml")
 	originalYAML, err := os.ReadFile(yamlfile)
 	if err != nil {
 		log.Fatalf("error reading YAML file: %v", err)
 	}
 
 	// Create the fix (this does NOT apply it yet)
-	fix := autofix.ADES100Fix(
-		"${{ inputs.name }}",
-		"test",
+	fix := autofix.ADES111Fix(
+		"${{ inputs.query }}",
+		"example_job",
 		0,
-		`echo "Hello ${{ inputs.name }}"`,
+		`yq '${{ inputs.query }}' 'config.yml'`,
 	)
 
 	// Apply the fix
