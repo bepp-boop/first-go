@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       query:
-        description: "yq query to run against config.yml"
+        description: "yq query to run against config.yaml"
         required: false
         default: ".app.name"
 
