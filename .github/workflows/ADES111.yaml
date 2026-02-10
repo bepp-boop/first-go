@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Debug input
-        run: echo "QUERY="$INPUT_QUERY""
+        run: echo "QUERY=$INPUT_QUERY"
       - name: print out the file
         uses: mikefarah/yq@master
         with:
