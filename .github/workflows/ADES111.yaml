@@ -20,7 +20,7 @@ jobs:
       - name: print out the file
         uses: mikefarah/yq@master
         with:
-          cmd: yq config.yaml -C | yq e
+          cmd: yq config.yaml | yq e
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
