@@ -19,6 +19,6 @@ jobs:
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq eval "$INPUTS_QUERY" config.yml
+          cmd: yq eval "$INPUTS_QUERY" config.yaml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
