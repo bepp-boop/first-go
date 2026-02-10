@@ -17,10 +17,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Debug input
         run: echo "QUERY=$INPUTS_QUERY"
-      - name: print out the file
-        uses: mikefarah/yq@master
-        with:
-          cmd: yq config.yaml
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
