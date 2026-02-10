@@ -20,10 +20,10 @@ jobs:
       - name: print out the file
         uses: mikefarah/yq@master
         with:
-          cmd: yq config.yaml | yq e
+          cmd: yq config.yaml
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.name' config.yaml
+          cmd: yq '.[]' config.yaml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
