@@ -6,7 +6,7 @@ on:
       query:
         description: "yq query to run against config.yaml"
         required: false
-        default: ".name"
+        default: "."
 
 jobs:
   example_job:
@@ -24,6 +24,6 @@ jobs:
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.' config.yaml
+          cmd: yq "$INPUT_QUERY" config.yaml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
