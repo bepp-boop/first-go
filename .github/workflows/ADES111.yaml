@@ -15,7 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      - name: Debug input
+        run: echo "QUERY='${{ inputs.query }}'"
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
