@@ -24,6 +24,6 @@ jobs:
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.app.name' config.yaml
+          cmd: yq '.' config.yaml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
