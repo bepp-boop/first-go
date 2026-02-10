@@ -15,7 +15,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Debug input
-        run: echo "QUERY=$INPUTS_QUERY"
+        run: echo "Hello $INPUTS_QUERY"
+        env:
+          INPUTS_QUERY: ${{ inputs.query }}
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
