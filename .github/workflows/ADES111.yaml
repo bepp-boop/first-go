@@ -15,10 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Debug input
-        run: echo QUERY="$INPUTS_QUERY"
+        run: echo "QUERY=$INPUTS_QUERY"
       - name: Run yq query
         uses: mikefarah/yq@master
         with:
-          cmd: yq app.name config.yaml
+          cmd: yq 'app.name' config.yaml
         env:
           INPUTS_QUERY: ${{ inputs.query }}
