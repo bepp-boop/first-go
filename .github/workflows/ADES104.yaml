@@ -1,23 +1,25 @@
 name: ADES104
+
 on:
   workflow_dispatch:
     inputs:
-      file: 
-        description: "Path to the YAML file"
+      file:
+        description: "Path to the JSON file"
         required: true
         type: string
-        
+
 jobs:
   example_job:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Debug workspace
         run: |
-            pwd
-            ls -R
-      - name: Example step
+          pwd
+          ls -R
+
+      - name: Read app version
         uses: sergeysova/jq-action@v2
         with:
-          cmd: jq .app.version "$GITHUB_EVENT_INPUTS_FILE" -r
-        env:
-          GITHUB_EVENT_INPUTS_FILE: ${{ github.event.inputs.file }}
+          cmd: jq -r '.app.version' ${{ github.event.inputs.file }}
