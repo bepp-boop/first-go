@@ -12,6 +12,10 @@ jobs:
       - name: Example step
         uses: appleboy/ssh-action@v1
         with:
+          host: homepage
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           script: echo "Hello $INPUTS_NAME"
           envs: INPUTS_NAME
         env:
