@@ -9,13 +9,20 @@ jobs:
   example_job:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Secret
+        run: |
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "Key is EMPTY"
+          else
+            echo "Key is SET"
+          fi
       - name: Example step
         uses: appleboy/ssh-action@v1
         with:
-          host: homepage
+          host: vm.cloud.cbh.kth.se
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          port: 20213
           script: echo "Hello $INPUTS_NAME"
           envs: INPUTS_NAME
         env:
